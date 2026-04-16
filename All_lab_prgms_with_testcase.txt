@@ -1,0 +1,2746 @@
+[23bcs102@mepcolinux ex1]$cat ex1.prn
+Script started on Wed Feb  4 15:44:42 2026
+[23bcs102@mepcolinux ex1]$cat p1.py
+[23bcs102@mepcolinux ex2]$cat traversal.py
+from queue import Queue
+import heapq
+
+def add_node(graph, node):
+    if node not in graph:
+        graph[node] = []
+def delete_node(graph, node):
+    if node in graph:
+        del graph[node]
+        for neighbours in graph.values():
+            if node in neighbours:
+                neighbours.remove(node)
+    else:
+        print("\nNode does not exist in the graph.")
+def add_edge(graph, x, y, weight=1):
+    if x not in graph:
+        add_node(graph, x)
+    if y not in graph:
+        add_node(graph, y)
+    if y not in graph[x]:
+        graph[x].append(y)
+    if x not in graph[y]:
+        graph[y].append(x)
+    # Store weights for both directions
+    weights[(x, y)] = weight
+    weights[(y, x)] = weight
+def delete_edge(graph, x, y):
+    if x in graph and y in graph[x]:
+        graph[x].remove(y)
+    if y in graph and x in graph[y]:
+        graph[y].remove(x)
+    # Remove weights
+    if (x, y) in weights:
+        del weights[(x, y)]
+    if (y, x) in weights:
+        del weights[(y, x)]
+def display_adjlist(graph):
+    print("\nAdjacency List:")
+    for node in graph:
+        print(f'{node}: {graph[node]}')
+def bfs(graph, start, goals):
+    visited = set([start])
+    q = Queue()
+    q.put(start)
+    result = []
+    print("\n\tBFS:")
+    while not q.empty():
+        print("\nFringe (queue):", list(q.queue))
+        current = q.get()
+        result.append(current)
+        print("\nPath so far:", result)
+        if current in goals:
+            print("\nGoal found! Path:", result)
+            break
+        for neighbor in graph.get(current, []):
+            if neighbor not in visited:
+                q.put(neighbor)
+                visited.add(neighbor)
+
+def dfs(graph, start, goals):
+    visited = set()
+    stack = [start]
+    result = []
+    print("\n\tDFS Traversal:")
+    while stack:
+        print("Fringe (stack):", list(stack))
+        current = stack.pop()
+        if current not in visited:
+            result.append(current)
+            print("Path so far:", result)
+            if current in goals:
+                print("Goal found! Path:", result)
+                break
+            visited.add(current)
+            for neighbor in reversed(graph.get(current, [])):  # For consistent order
+                if neighbor not in visited:
+                    stack.append(neighbor)
+
+def ucs(graph, start, goals):
+    visited = set()
+    # Priority queue: (cumulative_cost, node, path)
+    pq = [(0, start, [start])]
+    print("\n\tUCS Traversal:")
+
+    while pq:
+        print("\nFringe (priority queue - cost, node):", [(cost, node) for cost, node, _ in pq])
+        current_cost, current_node, path = heapq.heappop(pq)
+
+        if current_node in visited:
+            continue
+
+        visited.add(current_node)
+        print(f"Visiting: {current_node} with cost: {current_cost}")
+        print("Path so far:", path)
+
+        if current_node in goals:
+            print(f"\nGoal found! Path: {path}")
+            print(f"Total cost: {current_cost}")
+            return path, current_cost
+
+        for neighbor in graph.get(current_node, []):
+            if neighbor not in visited:
+                edge_weight = weights.get((current_node, neighbor), 1)
+                new_cost = current_cost + edge_weight
+                new_path = path + [neighbor]
+                heapq.heappush(pq, (new_cost, neighbor, new_path))
+
+    print("\nGoal not found!")
+    return None, float('inf')
+
+def a_star_search(graph, start, goals):
+    visited = set()
+    # Priority queue: (f_cost, g_cost, node, path)
+    # f_cost = g_cost + h_cost (evaluation function)
+    h_start = heuristics.get(start, 0)
+    pq = [(h_start, 0, start, [start])]
+    print("\n\tA* Search Traversal:")
+
+    while pq:
+        print("\nFringe (priority queue - f, g, node):", [(f, g, node) for f, g, node, _ in pq])
+        f_cost, g_cost, current_node, path = heapq.heappop(pq)
+
+        if current_node in visited:
+            continue
+
+        visited.add(current_node)
+        h_cost = heuristics.get(current_node, 0)
+        print(f"Visiting: {current_node} | g(n)={g_cost}, h(n)={h_cost}, f(n)={f_cost}")
+        print("Path so far:", path)
+
+        if current_node in goals:
+            print(f"\nGoal found! Path: {path}")
+            print(f"Total cost: {g_cost}")
+            return path, g_cost
+
+        for neighbor in graph.get(current_node, []):
+            if neighbor not in visited:
+                edge_weight = weights.get((current_node, neighbor), 1)
+                new_g_cost = g_cost + edge_weight
+                h_neighbor = heuristics.get(neighbor, 0)
+                new_f_cost = new_g_cost + h_neighbor
+                new_path = path + [neighbor]
+                heapq.heappush(pq, (new_f_cost, new_g_cost, neighbor, new_path))
+
+    print("\nGoal not found!")
+    return None, float('inf')
+
+graph = {}
+weights = {}  # Dictionary to store edge weights
+heuristics = {}  # Dictionary to store heuristic values for A*
+n = int(input("Enter number of nodes: "))
+print("Enter Nodes:")
+for _ in range(n):
+    node = input()
+    add_node(graph, node)
+
+e = int(input("Enter number of edges: "))
+print("Enter Edges (x y weight) or (x y) for weight=1:")
+for _ in range(e):
+    edge_input = input().split()
+    if len(edge_input) == 3:
+        x, y, w = edge_input[0], edge_input[1], int(edge_input[2])
+        add_edge(graph, x, y, w)
+    else:
+        x, y = edge_input[0], edge_input[1]
+        add_edge(graph, x, y)
+display_adjlist(graph)
+print("\n\t----Menu----\n0.Exit\n1.BFS\n2.DFS\n3.UCS\n4.Add node\n5.Add edge\n6.Delete node\n7.Delete edge\n8.Display adjacency list\n9.A* Search\n")
+while True:
+    ch = int(input("\nEnter choice (0-9): "))
+    if ch == 1:
+        start = input("Enter Start node: ")
+        k = int(input("Enter number of goal nodes: "))
+        print("Enter Goal nodes:")
+        goals = set(input() for _ in range(k))
+        bfs(graph, start, goals)
+    elif ch == 2:
+        start = input("Enter Start node: ")
+        k = int(input("Enter number of goal nodes: "))
+        print("Enter Goal nodes:")
+        goals = set(input() for _ in range(k))
+        dfs(graph, start, goals)
+    elif ch == 3:
+        start = input("Enter Start node: ")
+        k = int(input("Enter number of goal nodes: "))
+        print("Enter Goal nodes:")
+        goals = set(input() for _ in range(k))
+        ucs(graph, start, goals)
+    elif ch == 4:
+        n = int(input("Enter number of nodes: "))
+        print("Enter Nodes:")
+        for _ in range(n):
+            node = input()
+            add_node(graph, node)
+    elif ch == 5:
+        e = int(input("Enter number of edges: "))
+        print("Enter Edges (x y weight) or (x y) for weight=1:")
+        for _ in range(e):
+            edge_input = input().split()
+            if len(edge_input) == 3:
+                x, y, w = edge_input[0], edge_input[1], int(edge_input[2])
+                add_edge(graph, x, y, w)
+            else:
+                x, y = edge_input[0], edge_input[1]
+                add_edge(graph, x, y)
+    elif ch == 6:
+        n = int(input("Enter number of nodes: "))
+        print("Enter Nodes:")
+        for _ in range(n):
+            node = input()
+            delete_node(graph, node)
+    elif ch == 7:
+        e = int(input("Enter number of edges: "))
+        print("Enter Edges (x y):")
+        for _ in range(e):
+            x, y = input().split()
+            delete_edge(graph, x, y)
+    elif ch == 8:
+        display_adjlist(graph)
+    elif ch == 9:
+        print("\n--- A* Search ---")
+        # Set heuristics first
+        print("\nSet Heuristic Values (estimated cost to goal):")
+        n = int(input("Enter number of nodes to set heuristics: "))
+        print("Enter Node and Heuristic value (node h_value):")
+        heuristics.clear()  # Clear previous heuristics
+        for _ in range(n):
+            node_h = input().split()
+            node = node_h[0]
+            h_value = int(node_h[1])
+            heuristics[node] = h_value
+        print("\nHeuristics set:", heuristics)
+
+        # Now run A* search
+        start = input("\nEnter Start node: ")
+        k = int(input("Enter number of goal nodes: "))
+        print("Enter Goal nodes:")
+        goals = set(input() for _ in range(k))
+        a_star_search(graph, start, goals)
+    elif ch == 0:
+        break
+    else:
+        print("\nInvalid Choice.")
+[23bcs102@mepcolinux ex1]$cat dfsufs
+[23bcs102@mepcolinux ex1]$python3 p1.py
+Enter number of nodes: 14
+Enter node: A
+Node added
+
+Enter node: C
+Node added
+
+Enter node: B
+Node added
+
+Enter node: D
+Node added
+
+Enter node: E
+Node added
+
+Enter node: F
+Node added
+
+Enter node: G
+Node added
+
+Enter node: H
+Node added
+
+Enter node: I
+Node added
+
+Enter node: J
+Node added
+
+Enter node: K
+Node added
+
+Enter node: L
+Node added
+
+Enter node: M
+Node added
+
+Enter node: N
+Node added
+
+Enter number of edges: 14
+
+
+Enter node 1: A
+Enter node 2: B
+Enter cost: 2
+Edge added
+
+
+Enter node 1: A
+Enter node 2: C
+Enter cost: 1
+Edge added
+
+
+Enter node 1: B
+Enter node 2: D
+Enter cost: 4
+Edge added
+
+
+Enter node 1: D
+Enter node 2: E
+Enter cost: 1
+Edge added
+
+
+Enter node 1: E
+Enter node 2: F
+Enter cost: 3
+Edge added
+
+
+Enter node 1: E
+Enter node 2: H
+Enter cost: 7
+Edge added
+
+
+Enter node 1: F
+Enter node 2: G
+Enter cost: 1
+Edge added
+
+
+Enter node 1: G
+Enter node 2: J
+Enter cost: 5
+Edge added
+
+
+Enter node 1: G
+Enter node 2: I
+Enter cost: 4
+Edge added
+
+
+Enter node 1: I
+Enter node 2: K
+Enter cost: 2
+Edge added
+
+
+Enter node 1: K
+Enter node 2: L
+Enter cost: 3
+Edge added
+
+
+Enter node 1: K
+Enter node 2: M
+Enter cost: 1
+Edge added
+
+
+Enter node 1: L
+Enter node 2: M
+Enter cost: 5
+Edge added
+
+
+Enter node 1: M
+Enter node 2: N
+Enter cost: 6
+Edge added
+
+1. Add Node
+2. Delete Node
+3. Add Edge
+4. Delete Edge
+5. Display Graph
+6. BFS
+7. DFS
+8. UCS
+9. Exit
+Enter choice: 7
+Start node: A
+Goal node: N
+
+--- DFS Traversal Steps ---
+Pop: A
+Visited: ['A']
+Stack: ['C', 'B']
+Pop: B
+Visited: ['A', 'B']
+Stack: ['C', 'D']
+Pop: D
+Visited: ['A', 'B', 'D']
+Stack: ['C', 'E']
+Pop: E
+Visited: ['A', 'B', 'D', 'E']
+Stack: ['C', 'H', 'F']
+Pop: F
+Visited: ['A', 'B', 'D', 'E', 'F']
+Stack: ['C', 'H', 'G']
+Pop: G
+Visited: ['A', 'B', 'D', 'E', 'F', 'G']
+Stack: ['C', 'H', 'I', 'J']
+Pop: J
+Visited: ['A', 'B', 'D', 'E', 'F', 'G', 'J']
+Stack: ['C', 'H', 'I']
+Pop: I
+Visited: ['A', 'B', 'D', 'E', 'F', 'G', 'J', 'I']
+Stack: ['C', 'H', 'K']
+Pop: K
+Visited: ['A', 'B', 'D', 'E', 'F', 'G', 'J', 'I', 'K']
+Stack: ['C', 'H', 'M', 'L']
+Pop: L
+Visited: ['A', 'B', 'D', 'E', 'F', 'G', 'J', 'I', 'K', 'L']
+Stack: ['C', 'H', 'M', 'M']
+Pop: M
+Visited: ['A', 'B', 'D', 'E', 'F', 'G', 'J', 'I', 'K', 'L', 'M']
+Stack: ['C', 'H', 'M', 'N']
+Pop: N
+Visited: ['A', 'B', 'D', 'E', 'F', 'G', 'J', 'I', 'K', 'L', 'M', 'N']
+
+Goal found
+Visited order: ['A', 'B', 'D', 'E', 'F', 'G', 'J', 'I', 'K', 'L', 'M', 'N']
+
+1. Add Node
+2. Delete Node
+3. Add Edge
+4. Delete Edge
+5. Display Graph
+6. BFS
+7. DFS
+8. UCS
+9. Exit
+Enter choice: 8
+Start node: A
+Goal node: N
+Initial fringe: ['A']
+A
+Fringe after processing node A : ['A', 'B', 'C']
+C
+Fringe after processing node C : ['A', 'B', 'C']
+B
+Fringe after processing node B : ['A', 'B', 'C', 'D']
+D
+Fringe after processing node D : ['A', 'B', 'C', 'D', 'E']
+E
+Fringe after processing node E : ['A', 'B', 'C', 'D', 'E', 'F', 'H']
+F
+Fringe after processing node F : ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'G']
+G
+Fringe after processing node G : ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'G', 'J', 'I']
+H
+Fringe after processing node H : ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'G', 'J', 'I']
+I
+Fringe after processing node I : ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'G', 'J', 'I', 'K']
+J
+Fringe after processing node J : ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'G', 'J', 'I', 'K']
+K
+Fringe after processing node K : ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'G', 'J', 'I', 'K', 'L', 'M']
+M
+Fringe after processing node M : ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'G', 'J', 'I', 'K', 'L', 'M', 'L', 'N']
+L
+Fringe after processing node L : ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'G', 'J', 'I', 'K', 'L', 'M', 'L', 'N']
+L
+Fringe after processing node L : ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'G', 'J', 'I', 'K', 'L', 'M', 'L', 'N']
+N
+Goal node found!
+Visited nodes: ['A', 'C', 'B', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'M', 'L', 'N']
+Final path: ['A', 'B', 'D', 'E', 'F', 'G', 'I', 'K', 'M', 'N']
+Total cost: 24
+
+1. Add Node
+2. Delete Node
+3. Add Edge
+4. Delete Edge
+5. Display Graph
+6. BFS
+7. DFS
+8. UCS
+9. Exit
+Enter choice: 9
+Exiting...
+[23bcs102@mepcolinux ex1]$
+[23bcs102@mepcolinux ex1]$exit
+exit
+
+Script done on Wed Feb  4 15:44:50 2026
+[23bcs102@mepcolinux ex1]$
+
+
+
+Exercise - 2
+
+
+[23bcs102@mepcolinux ex2]$cat ex2.prn
+Script started on Wed Feb  4 16:09:48 2026
+[23bcs102@mepcolinux ex2]$cat traversal.py
+from queue import Queue
+import heapq
+
+def add_node(graph, node):
+    if node not in graph:
+        graph[node] = []
+def delete_node(graph, node):
+    if node in graph:
+        del graph[node]
+        for neighbours in graph.values():
+            if node in neighbours:
+                neighbours.remove(node)
+    else:
+        print("\nNode does not exist in the graph.")
+def add_edge(graph, x, y, weight=1):
+    if x not in graph:
+        add_node(graph, x)
+    if y not in graph:
+        add_node(graph, y)
+    if y not in graph[x]:
+        graph[x].append(y)
+    if x not in graph[y]:
+        graph[y].append(x)
+    # Store weights for both directions
+    weights[(x, y)] = weight
+    weights[(y, x)] = weight
+def delete_edge(graph, x, y):
+    if x in graph and y in graph[x]:
+        graph[x].remove(y)
+    if y in graph and x in graph[y]:
+        graph[y].remove(x)
+    # Remove weights
+    if (x, y) in weights:
+        del weights[(x, y)]
+    if (y, x) in weights:
+        del weights[(y, x)]
+def display_adjlist(graph):
+    print("\nAdjacency List:")
+    for node in graph:
+        print(f'{node}: {graph[node]}')
+def bfs(graph, start, goals):
+    visited = set([start])
+    q = Queue()
+    q.put(start)
+    result = []
+    print("\n\tBFS:")
+    while not q.empty():
+        print("\nFringe (queue):", list(q.queue))
+        current = q.get()
+        result.append(current)
+        print("\nPath so far:", result)
+        if current in goals:
+            print("\nGoal found! Path:", result)
+            break
+        for neighbor in graph.get(current, []):
+            if neighbor not in visited:
+                q.put(neighbor)
+                visited.add(neighbor)
+
+def dfs(graph, start, goals):
+    visited = set()
+    stack = [start]
+    result = []
+    print("\n\tDFS Traversal:")
+    while stack:
+        print("Fringe (stack):", list(stack))
+        current = stack.pop()
+        if current not in visited:
+            result.append(current)
+            print("Path so far:", result)
+            if current in goals:
+                print("Goal found! Path:", result)
+                break
+            visited.add(current)
+            for neighbor in reversed(graph.get(current, [])):  # For consistent order
+                if neighbor not in visited:
+                    stack.append(neighbor)
+
+def ucs(graph, start, goals):
+    visited = set()
+    # Priority queue: (cumulative_cost, node, path)
+    pq = [(0, start, [start])]
+    print("\n\tUCS Traversal:")
+
+    while pq:
+        print("\nFringe (priority queue - cost, node):", [(cost, node) for cost, node, _ in pq])
+        current_cost, current_node, path = heapq.heappop(pq)
+
+        if current_node in visited:
+            continue
+
+        visited.add(current_node)
+        print(f"Visiting: {current_node} with cost: {current_cost}")
+        print("Path so far:", path)
+
+        if current_node in goals:
+            print(f"\nGoal found! Path: {path}")
+            print(f"Total cost: {current_cost}")
+            return path, current_cost
+
+        for neighbor in graph.get(current_node, []):
+            if neighbor not in visited:
+                edge_weight = weights.get((current_node, neighbor), 1)
+                new_cost = current_cost + edge_weight
+                new_path = path + [neighbor]
+                heapq.heappush(pq, (new_cost, neighbor, new_path))
+
+    print("\nGoal not found!")
+    return None, float('inf')
+
+def a_star_search(graph, start, goals):
+    visited = set()
+    # Priority queue: (f_cost, g_cost, node, path)
+    # f_cost = g_cost + h_cost (evaluation function)
+    h_start = heuristics.get(start, 0)
+    pq = [(h_start, 0, start, [start])]
+    print("\n\tA* Search Traversal:")
+
+    while pq:
+        print("\nFringe (priority queue - f, g, node):", [(f, g, node) for f, g, node, _ in pq])
+        f_cost, g_cost, current_node, path = heapq.heappop(pq)
+
+        if current_node in visited:
+            continue
+
+        visited.add(current_node)
+        h_cost = heuristics.get(current_node, 0)
+        print(f"Visiting: {current_node} | g(n)={g_cost}, h(n)={h_cost}, f(n)={f_cost}")
+        print("Path so far:", path)
+
+        if current_node in goals:
+            print(f"\nGoal found! Path: {path}")
+            print(f"Total cost: {g_cost}")
+            return path, g_cost
+
+        for neighbor in graph.get(current_node, []):
+            if neighbor not in visited:
+                edge_weight = weights.get((current_node, neighbor), 1)
+                new_g_cost = g_cost + edge_weight
+                h_neighbor = heuristics.get(neighbor, 0)
+                new_f_cost = new_g_cost + h_neighbor
+                new_path = path + [neighbor]
+                heapq.heappush(pq, (new_f_cost, new_g_cost, neighbor, new_path))
+
+    print("\nGoal not found!")
+    return None, float('inf')
+
+graph = {}
+weights = {}  # Dictionary to store edge weights
+heuristics = {}  # Dictionary to store heuristic values for A*
+n = int(input("Enter number of nodes: "))
+print("Enter Nodes:")
+for _ in range(n):
+    node = input()
+    add_node(graph, node)
+
+e = int(input("Enter number of edges: "))
+print("Enter Edges (x y weight) or (x y) for weight=1:")
+for _ in range(e):
+    edge_input = input().split()
+    if len(edge_input) == 3:
+        x, y, w = edge_input[0], edge_input[1], int(edge_input[2])
+        add_edge(graph, x, y, w)
+    else:
+        x, y = edge_input[0], edge_input[1]
+        add_edge(graph, x, y)
+display_adjlist(graph)
+print("\n\t----Menu----\n0.Exit\n1.BFS\n2.DFS\n3.UCS\n4.Add node\n5.Add edge\n6.Delete node\n7.Delete edge\n8.Display adjacency list\n9.A* Search\n")
+while True:
+    ch = int(input("\nEnter choice (0-9): "))
+    if ch == 1:
+        start = input("Enter Start node: ")
+        k = int(input("Enter number of goal nodes: "))
+        print("Enter Goal nodes:")
+        goals = set(input() for _ in range(k))
+        bfs(graph, start, goals)
+    elif ch == 2:
+        start = input("Enter Start node: ")
+        k = int(input("Enter number of goal nodes: "))
+        print("Enter Goal nodes:")
+        goals = set(input() for _ in range(k))
+        dfs(graph, start, goals)
+    elif ch == 3:
+        start = input("Enter Start node: ")
+        k = int(input("Enter number of goal nodes: "))
+        print("Enter Goal nodes:")
+        goals = set(input() for _ in range(k))
+        ucs(graph, start, goals)
+    elif ch == 4:
+        n = int(input("Enter number of nodes: "))
+        print("Enter Nodes:")
+        for _ in range(n):
+            node = input()
+            add_node(graph, node)
+    elif ch == 5:
+        e = int(input("Enter number of edges: "))
+        print("Enter Edges (x y weight) or (x y) for weight=1:")
+        for _ in range(e):
+            edge_input = input().split()
+            if len(edge_input) == 3:
+                x, y, w = edge_input[0], edge_input[1], int(edge_input[2])
+                add_edge(graph, x, y, w)
+            else:
+                x, y = edge_input[0], edge_input[1]
+                add_edge(graph, x, y)
+    elif ch == 6:
+        n = int(input("Enter number of nodes: "))
+        print("Enter Nodes:")
+        for _ in range(n):
+            node = input()
+            delete_node(graph, node)
+    elif ch == 7:
+        e = int(input("Enter number of edges: "))
+        print("Enter Edges (x y):")
+        for _ in range(e):
+            x, y = input().split()
+            delete_edge(graph, x, y)
+    elif ch == 8:
+        display_adjlist(graph)
+    elif ch == 9:
+        print("\n--- A* Search ---")
+        # Set heuristics first
+        print("\nSet Heuristic Values (estimated cost to goal):")
+        n = int(input("Enter number of nodes to set heuristics: "))
+        print("Enter Node and Heuristic value (node h_value):")
+        heuristics.clear()  # Clear previous heuristics
+        for _ in range(n):
+            node_h = input().split()
+            node = node_h[0]
+            h_value = int(node_h[1])
+            heuristics[node] = h_value
+        print("\nHeuristics set:", heuristics)
+
+        # Now run A* search
+        start = input("\nEnter Start node: ")
+        k = int(input("Enter number of goal nodes: "))
+        print("Enter Goal nodes:")
+        goals = set(input() for _ in range(k))
+        a_star_search(graph, start, goals)
+    elif ch == 0:
+        break
+    else:
+        print("\nInvalid Choice.")
+[23bcs102@mepcolinux ex2]$cat tc
+[23bcs102@mepcolinux ex2]$python3 traversal.py
+Enter number of nodes: 7
+Enter Nodes:
+a
+b
+c
+d
+e
+f
+g
+Enter number of edges: 10
+Enter Edges (x y weight) or (x y) for weight=1:
+a b 5
+a c 10
+b c 2
+j a 3
+d b 1
+b e 1
+c g 4
+j d 2
+d e 3
+e g 4
+
+Adjacency List:
+a: ['b', 'c', 'j']
+b: ['a', 'c', 'd', 'e']
+c: ['a', 'b', 'g']
+d: ['b', 'j', 'e']
+e: ['b', 'd', 'g']
+f: []
+g: ['c', 'e']
+j: ['a', 'd']
+
+        ----Menu----
+0.Exit
+1.BFS
+2.DFS
+3.UCS
+4.Add node
+5.Add edge
+6.Delete node
+7.Delete edge
+8.Display adjacency list
+9.A* Search
+
+
+Enter choice (0-9): 9
+
+--- A* Search ---
+
+Set Heuristic Values (estimated cost to goal):
+Enter number of nodes to set heuristics: 7
+Enter Node and Heuristic value (node h_value):
+a 9
+b 4
+c 2
+d 5
+e 3
+j 1
+g 8
+
+Heuristics set: {'a': 9, 'b': 4, 'c': 2, 'd': 5, 'e': 3, 'j': 1, 'g': 8}
+
+Enter Start node: j
+Enter number of goal nodes: 1
+Enter Goal nodes:
+g
+
+        A* Search Traversal:
+
+Fringe (priority queue - f, g, node): [(1, 0, 'j')]
+Visiting: j | g(n)=0, h(n)=1, f(n)=1
+Path so far: ['j']
+
+Fringe (priority queue - f, g, node): [(7, 2, 'd'), (12, 3, 'a')]
+Visiting: d | g(n)=2, h(n)=5, f(n)=7
+Path so far: ['j', 'd']
+
+Fringe (priority queue - f, g, node): [(7, 3, 'b'), (12, 3, 'a'), (8, 5, 'e')]
+Visiting: b | g(n)=3, h(n)=4, f(n)=7
+Path so far: ['j', 'd', 'b']
+
+Fringe (priority queue - f, g, node): [(7, 4, 'e'), (7, 5, 'c'), (17, 8, 'a'), (12, 3, 'a'), (8, 5, 'e')]
+Visiting: e | g(n)=4, h(n)=3, f(n)=7
+Path so far: ['j', 'd', 'b', 'e']
+
+Fringe (priority queue - f, g, node): [(7, 5, 'c'), (8, 5, 'e'), (17, 8, 'a'), (12, 3, 'a'), (16, 8, 'g')]
+Visiting: c | g(n)=5, h(n)=2, f(n)=7
+Path so far: ['j', 'd', 'b', 'c']
+
+Fringe (priority queue - f, g, node): [(8, 5, 'e'), (12, 3, 'a'), (17, 8, 'a'), (16, 8, 'g'), (24, 15, 'a'), (17, 9, 'g')]
+
+Fringe (priority queue - f, g, node): [(12, 3, 'a'), (16, 8, 'g'), (17, 8, 'a'), (17, 9, 'g'), (24, 15, 'a')]
+Visiting: a | g(n)=3, h(n)=9, f(n)=12
+Path so far: ['j', 'a']
+
+Fringe (priority queue - f, g, node): [(16, 8, 'g'), (17, 9, 'g'), (17, 8, 'a'), (24, 15, 'a')]
+Visiting: g | g(n)=8, h(n)=8, f(n)=16
+Path so far: ['j', 'd', 'b', 'e', 'g']
+
+Goal found! Path: ['j', 'd', 'b', 'e', 'g']
+Total cost: 8
+
+Enter choice (0-9): 9
+
+[23bcs102@mepcolinux ex2]$exit
+exit
+
+Script done on Wed Feb  4 16:09:59 2026
+[23bcs102@mepcolinux ex2]$
+
+
+
+
+Exercise - 3
+
+
+Script started on Wed Feb 18 16:11:35 2026
+[23bcs102@mepcolinux exp]$cat test
+input data : records.csv
+sepal length in cm,sepal width in cm,petal length in cm,petal width in cm,label
+4.7,3.6,1.7,0.3,Iris-setosa
+4.7,3.6,1.3,0.2,Iris-setosa
+5.2,3.1,1.2,0.2,Iris-setosa
+5.0,3.3,1.2,0.1,Iris-setosa
+4.7,3.7,1.5,0.4,Iris-setosa
+5.1,3.2,1.7,0.3,Iris-setosa
+5.4,3.6,1.6,0.3,Iris-setosa
+6.3,2.8,3.9,1.2,Iris-versicolor
+6.0,2.9,4.1,1.5,Iris-versicolor
+5.8,2.9,4.3,1.3,Iris-versicolor
+6.2,2.5,3.9,1.2,Iris-versicolor
+5.8,2.8,4.1,1.2,Iris-versicolor
+6.1,2.8,4.0,1.2,Iris-versicolor
+5.9,2.5,4.1,1.3,Iris-versicolor
+5.6,2.8,4.2,1.1,Iris-versicolor
+6.1,2.5,4.4,1.2,Iris-versicolor
+5.8,2.6,3.9,1.2,Iris-versicolor
+6.2,2.7,4.4,1.3,Iris-versicolor
+5.6,2.7,4.3,1.2,Iris-versicolor
+6.5,3.0,5.4,2.2,Iris-virginica
+6.2,2.6,5.4,2.0,Iris-virginica
+6.6,2.7,5.4,2.1,Iris-virginica
+7.0,2.7,5.3,2.0,Iris-virginica
+6.2,2.7,5.5,1.8,Iris-virginica
+6.5,2.6,5.7,2.1,Iris-virginica
+6.9,2.6,5.8,1.8,Iris-virginica
+6.8,3.1,5.8,2.0,Iris-virginica
+6.8,2.8,5.8,2.1,Iris-virginica
+6.4,3.0,5.4,1.9,Iris-virginica
+
+Enter K value for prediction: 7
+
+
+import math
+import csv
+import random
+
+def load_data(filename):
+    X, y = [], []
+    try:
+        with open(filename, 'r') as f:
+            reader = csv.reader(f)
+            next(reader) # Skip header
+            for row in reader:
+                if not row: continue
+                X.append([float(x) for x in row[:-1]])
+                y.append(row[-1].strip())
+    except Exception as e:
+        print(f"File Error: {e}")
+    return X, y
+
+def get_stats(data):
+    num_cols = len(data[0])
+    stats = []
+    for col in range(num_cols):
+        col_vals = [row[col] for row in data]
+        mean = sum(col_vals) / len(col_vals)
+        std = math.sqrt(sum((x - mean)**2 for x in col_vals) / len(col_vals))
+        stats.append({'min': min(col_vals), 'max': max(col_vals), 'mean': mean, 'std': std})
+    return stats
+
+def normalize_row(row, stats, mode):
+    norm_row = []
+    for i, val in enumerate(row):
+        s = stats[i]
+        if mode == '1': # Min-Max
+            norm_row.append((val - s['min']) / (s['max'] - s['min']) if s['max'] != s['min'] else 0)
+        elif mode == '2': # Z-Score
+            norm_row.append((val - s['mean']) / s['std'] if s['std'] != 0 else 0)
+        else: norm_row.append(val)
+    return norm_row
+
+def knn_classifier(X_norm, y, query_norm, k, p):
+    results = []
+    for i in range(len(X_norm)):
+        dist = sum(abs(a - b)**p for a, b in zip(query_norm, X_norm[i]))**(1/p)
+        results.append({'id': i + 1, 'norm_feat': X_norm[i], 'label': y[i], 'dist': dist})
+
+    sorted_neighbors = sorted(results, key=lambda x: x['dist'])
+    for rank, item in enumerate(sorted_neighbors, 1):
+        item['rank'] = rank
+
+    top_k = sorted_neighbors[:k]
+    votes = [n['label'] for n in top_k]
+    prediction = max(set(votes), key=votes.count) if votes else "N/A"
+    return sorted_neighbors, top_k, prediction
+
+def main():
+    filename = input("Enter CSV filename: ")
+    X_all, y_all = load_data(filename)
+
+    if len(X_all) < 600:
+        print("Error: Need at least 600 records (assuming 200 per class).")
+        return
+
+    # 1. STRATIFIED SAMPLING (50 per class)
+    # Assuming class 1: 0-199, class 2: 200-399, class 3: 400-599
+    indices = random.sample(range(0, 200), 50) + \
+              random.sample(range(200, 400), 50) + \
+              random.sample(range(400, 600), 50)
+
+    X_sampled = [X_all[i] for i in indices]
+    y_sampled = [y_all[i] for i in indices]
+
+    # --- NEW: DISPLAY SELECTED 150 RECORDS (ORIGINAL) ---
+    print(f"\n--- 1. SELECTED 150 RECORDS (ORIGINAL VALUES) ---")
+    print(f"{'No':<4} | {'Original Features':<30} | {'Class'}")
+    print("-" * 50)
+    for idx, (features, label) in enumerate(zip(X_sampled, y_sampled), 1):
+        feat_str = ", ".join([str(f) for f in features])
+        print(f"{idx:<4} | {feat_str:<30} | {label}")
+
+    # 2. INPUTS
+    query_raw = [float(x) for x in input("\nEnter query values (space separated): ").split()]
+    mode = input("Normalization (1:Min-Max, 2:Z-Score, 3:None): ")
+    p = float(input("Power 'p' (2 for Euclidean): ") or 2)
+
+    # 3. NORMALIZATION
+    stats = get_stats(X_sampled)
+    q_norm = normalize_row(query_raw, stats, mode)
+    X_norm = [normalize_row(row, stats, mode) for row in X_sampled]
+
+    # 4. ALL SAMPLED RECORDS DISPLAY (WITH DISTANCE)
+    all_res, _, _ = knn_classifier(X_norm, y_sampled, q_norm, 1, p)
+
+    print("\n--- 2. SAMPLED RECORDS: NORMALIZED VALUES, DISTANCE AND RANK ---")
+    print(f"{'ID':<4} | {'Normalized Features':<35} | {'Distance':<10} | {'Rank'}")
+    print("-" * 75)
+    # Sort by ID to keep the display consistent with the original selection list
+    for r in sorted(all_res, key=lambda x: x['id']):
+        norm_str = ", ".join([f"{v:.3f}" for v in r['norm_feat']])
+        print(f"{r['id']:<4} | {norm_str:<35} | {r['dist']:.5f}  | {r['rank']}")
+
+    # 5. K-NEIGHBORS DISPLAY
+    k = int(input("\nEnter K value for prediction: "))
+    _, top_k, final_pred = knn_classifier(X_norm, y_sampled, q_norm, k, p)
+
+    print(f"\n--- 3. TOP {k} NEIGHBORS ---")
+    print(f"{'Rank':<5} | {'Original Values':<20} | {'Normalized':<25} | {'Class'}")
+    print("-" * 85)
+    for item in top_k:
+        # item['id'] is 1-based index of X_sampled
+        orig_vals = X_sampled[item['id']-1]
+        orig_str = ",".join([str(v) for v in orig_vals])
+        norm_str = ",".join([f"{v:.3f}" for v in item['norm_feat']])
+        print(f"{item['rank']:<5} | {orig_str:<20} | {norm_str:<25} | {item['label']}")
+
+    print(f"\nFINAL PREDICTION: {final_pred}")
+
+if __name__ == "__main__":
+    main()
+
+[23bcs102@mepcolinux ex3]$python3 ex3.py
+Enter CSV filename: records.csv
+
+
+Enter query values (space separated): 4 2 1 5
+Normalization (1:Min-Max, 2:Z-Score, 3:None): 1
+Power 'p' (2 for Euclidean): 2
+
+
+Enter K value for prediction: 7
+
+--- 3. TOP 7 NEIGHBORS ---
+Rank  | Original Values      | Normalized                | Class
+-------------------------------------------------------------------------------------
+1     | 5.6,2.6,3.9,1.5      | 0.417,0.154,0.587,0.682   | Iris-versicolor
+2     | 5.8,2.5,4.1,1.5      | 0.500,0.077,0.630,0.682   | Iris-versicolor
+3     | 5.7,2.7,4.0,1.5      | 0.458,0.231,0.609,0.682   | Iris-versicolor
+4     | 5.5,2.7,4.5,1.5      | 0.375,0.231,0.717,0.682   | Iris-versicolor
+5     | 5.7,2.8,4.0,1.5      | 0.458,0.308,0.609,0.682   | Iris-versicolor
+6     | 6.2,2.7,5.8,2.2      | 0.667,0.231,1.000,1.000   | Iris-virginica
+7     | 6.0,2.5,4.2,1.5      | 0.583,0.077,0.652,0.682   | Iris-versicolor
+
+FINAL PREDICTION: Iris-versicolor
+
+
+[23bcs102@mepcolinux ex3]$exit
+exit
+
+Script done on Wed Feb 18 16:11:41 2026
+[23bcs102@mepcolinux ex3]$
+
+
+
+
+
+
+
+
+Exercise - 4
+
+
+[23bcs102@mepcolinux ex4]$cat ex4.prn
+Script started on Wed Mar  4 15:38:57 2026
+[23bcs102@mepcolinux ex4]$cat test
+[23bcs102@mepcolinux ex4]$cat d1.py
+import math
+
+def safe_log2(x: float) -> float:
+    return math.log(x, 2) if x > 0 else 0.0
+
+def entropy(rows, target):
+    label_counts = {}
+    for row in rows:
+        y = row[target]
+        label_counts[y] = label_counts.get(y, 0) + 1
+
+    total = len(rows)
+    H = 0.0
+    probs = []
+    for c in label_counts.values():
+        p = c / total
+        probs.append(p)
+        H += -p * safe_log2(p)
+    return H, label_counts, probs
+
+def unique_values(rows, attr):
+    seen = set()
+    vals = []
+    for row in rows:
+        v = row[attr]
+        if v not in seen:
+            seen.add(v)
+            vals.append(v)
+    return vals
+
+def split_by_value(rows, attr):
+    groups = {}
+    for row in rows:
+        v = row[attr]
+        groups.setdefault(v, []).append(row)
+    return groups
+
+def step_by_step_report(rows, attributes, target):
+    n = len(rows)
+    H_S, label_counts, _ = entropy(rows, target)
+
+    print("\n" + "="*60)
+    print("INTERMEDIATE CALCULATION REPORT")
+    print("="*60)
+    print(f"Total examples: {n}")
+
+    labels_sorted = sorted(label_counts.keys())
+    parts = []
+    for L in labels_sorted:
+        c = label_counts.get(L, 0)
+        p = c / n
+        parts.append(f"-({c}/{n})*log2({c}/{n})")
+
+    print(f"Entropy H(S) = {' + '.join(parts)} = {H_S:.4f}")
+    print(f"Class counts: {', '.join([f'{L}={label_counts[L]}' for L in labels_sorted])}")
+    print("-" * 30)
+
+    ig_results = []
+
+    for attr in attributes:
+        print(f"\nEvaluating Attribute: {attr}")
+        groups = split_by_value(rows, attr)
+        weighted_terms = []
+        H_after = 0.0
+
+        for v in unique_values(rows, attr):
+            subset = groups[v]
+            n_v = len(subset)
+            H_v, counts_v, _ = entropy(subset, target)
+            weight = n_v / n
+            H_after += weight * H_v
+
+            # Detailed subset entropy expression
+            parts_v = []
+            for L in labels_sorted:
+                c = counts_v.get(L, 0)
+                if c > 0:
+                    parts_v.append(f"-({c}/{n_v})*log2({c}/{n_v})")
+
+            print(f"  Value '{v}': |S_v|={n_v} | Counts: {', '.join([f'{L}={counts_v.get(L,0)}' for L in labels_sorted])}")
+            if parts_v:
+                print(f"    H(S_{v}) = {' + '.join(parts_v)} = {H_v:.4f}")
+            else:
+                print(f"    H(S_{v}) = 0.0000")
+
+            weighted_terms.append(f"({n_v}/{n})*{H_v:.4f}")
+
+        print(f"  Sum of weighted entropies H(S|{attr}) = {' + '.join(weighted_terms)} = {H_after:.4f}")
+        IG = H_S - H_after
+        print(f"  RESULT: Information Gain IG(S, {attr}) = {H_S:.4f} - {H_after:.4f} = {IG:.4f}")
+        ig_results.append((attr, IG))
+
+    print("\n" + "="*40)
+    print("FINAL SUMMARY OF INFORMATION GAIN")
+    print("="*40)
+    for attr, IG in ig_results:
+        print(f"- {attr:15s} -> IG = {IG:.4f}")
+
+    best_attr, best_IG = max(ig_results, key=lambda x: x[1])
+    print(f"\nROOT NODE SELECTED: {best_attr}")
+    print(f"Highest Information Gain: {best_IG:.4f}")
+    print("="*40 + "\n")
+
+def loads_dataset_from_txt(filename):
+    data = []
+    with open(filename, "r") as f:
+        # filter(None, ...) handles the empty trailing lines on Linux
+        lines = list(filter(None, f.read().splitlines()))
+
+    headers = lines[0].split(",")
+    for line in lines[1:]:
+        line = line.strip()
+        if not line: continue
+        values = line.split(",")
+        if len(values) == len(headers):
+            row = {headers[i]: values[i] for i in range(len(headers))}
+            data.append(row)
+    return data, headers[:-1], headers[-1]
+
+if __name__ == "__main__":
+    filename = input("Enter dataset filename (e.g., data.txt): ").strip()
+    try:
+        data, attributes, target = loads_dataset_from_txt(filename)
+        if not data:
+            print("Error: No data found in file.")
+        else:
+            step_by_step_report(data, attributes, target)
+    except FileNotFoundError:
+        print(f"Error: File '{filename}' not found.")
+[23bcs102@mepcolinux ex4]$cat t_data.txt
+age,income,student,credit_rating,buys_computer
+middle_aged,medium,yes,fair,yes
+middle_aged,low,yes,excellent,yes
+middle_aged,low,yes,excellent,yes
+middle_aged,high,no,excellent,yes
+middle_aged,high,no,excellent,yes
+middle_aged,low,yes,excellent,yes
+senior,medium,no,fair,yes
+youth,medium,no,excellent,no
+senior,medium,yes,excellent,no
+senior,medium,no,excellent,no
+youth,low,yes,fair,yes
+youth,low,no,excellent,no
+senior,low,no,excellent,no
+middle_aged,medium,no,excellent,yes
+senior,low,no,excellent,no
+[23bcs102@mepcolinux ex4]$python3 d1.py
+Enter dataset filename (e.g., data.txt): t_data.txt
+
+============================================================
+INTERMEDIATE CALCULATION REPORT
+============================================================
+Total examples: 15
+Entropy H(S) = -(6/15)*log2(6/15) + -(9/15)*log2(9/15) = 0.9710
+Class counts: no=6, yes=9
+------------------------------
+
+Evaluating Attribute: age
+  Value 'middle_aged': |S_v|=7 | Counts: no=0, yes=7
+    H(S_middle_aged) = -(7/7)*log2(7/7) = 0.0000
+  Value 'senior': |S_v|=5 | Counts: no=4, yes=1
+    H(S_senior) = -(4/5)*log2(4/5) + -(1/5)*log2(1/5) = 0.7219
+  Value 'youth': |S_v|=3 | Counts: no=2, yes=1
+    H(S_youth) = -(2/3)*log2(2/3) + -(1/3)*log2(1/3) = 0.9183
+  Sum of weighted entropies H(S|age) = (7/15)*0.0000 + (5/15)*0.7219 + (3/15)*0.9183 = 0.4243
+  RESULT: Information Gain IG(S, age) = 0.9710 - 0.4243 = 0.5466
+
+Evaluating Attribute: income
+  Value 'medium': |S_v|=6 | Counts: no=3, yes=3
+    H(S_medium) = -(3/6)*log2(3/6) + -(3/6)*log2(3/6) = 1.0000
+  Value 'low': |S_v|=7 | Counts: no=3, yes=4
+    H(S_low) = -(3/7)*log2(3/7) + -(4/7)*log2(4/7) = 0.9852
+  Value 'high': |S_v|=2 | Counts: no=0, yes=2
+    H(S_high) = -(2/2)*log2(2/2) = 0.0000
+  Sum of weighted entropies H(S|income) = (6/15)*1.0000 + (7/15)*0.9852 + (2/15)*0.0000 = 0.8598
+  RESULT: Information Gain IG(S, income) = 0.9710 - 0.8598 = 0.1112
+
+Evaluating Attribute: student
+  Value 'yes': |S_v|=6 | Counts: no=1, yes=5
+    H(S_yes) = -(1/6)*log2(1/6) + -(5/6)*log2(5/6) = 0.6500
+  Value 'no': |S_v|=9 | Counts: no=5, yes=4
+    H(S_no) = -(5/9)*log2(5/9) + -(4/9)*log2(4/9) = 0.9911
+  Sum of weighted entropies H(S|student) = (6/15)*0.6500 + (9/15)*0.9911 = 0.8547
+  RESULT: Information Gain IG(S, student) = 0.9710 - 0.8547 = 0.1163
+
+Evaluating Attribute: credit_rating
+  Value 'fair': |S_v|=3 | Counts: no=0, yes=3
+    H(S_fair) = -(3/3)*log2(3/3) = 0.0000
+  Value 'excellent': |S_v|=12 | Counts: no=6, yes=6
+    H(S_excellent) = -(6/12)*log2(6/12) + -(6/12)*log2(6/12) = 1.0000
+  Sum of weighted entropies H(S|credit_rating) = (3/15)*0.0000 + (12/15)*1.0000 = 0.8000
+  RESULT: Information Gain IG(S, credit_rating) = 0.9710 - 0.8000 = 0.1710
+
+========================================
+FINAL SUMMARY OF INFORMATION GAIN
+========================================
+- age             -> IG = 0.5466
+- income          -> IG = 0.1112
+- student         -> IG = 0.1163
+- credit_rating   -> IG = 0.1710
+
+ROOT NODE SELECTED: age
+Highest Information Gain: 0.5466
+========================================
+
+[23bcs102@mepcolinux ex4]$exit
+exit
+
+Script done on Wed Mar  4 15:39:02 2026
+[23bcs102@mepcolinux ex4]$
+
+
+Exercise - 5
+
+
+
+[23bcs102@mepcolinux ex5]$cat ex5.prn
+import sys
+SIZE = 0
+world = []
+agent_pos = [0, 0]
+has_gold = False
+wumpus_alive = True
+bump_flag = False
+scream_flag = False
+def neighbors(x, y):
+    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        nx, ny = x + dx, y + dy
+        if 0 <= nx < SIZE and 0 <= ny < SIZE:
+            yield nx, ny
+def init_kb(size):
+    global kb, processed_percepts
+    kb = [[{
+        'pit': 'unknown',
+        'wumpus': 'unknown',
+        'pit_count': 0,
+        'wumpus_count': 0,
+        'safe': False,
+        'visited': False
+    } for _ in range(size)] for _ in range(size)]
+    processed_percepts = {}
+    # Mark agent start as safe
+    ax, ay = agent_pos
+    kb[ax][ay]['safe'] = True
+    kb[ax][ay]['pit'] = 'no'
+    kb[ax][ay]['wumpus'] = 'no'
+    # Note: 'visited' will be set when sensor() runs for the first time.
+def create_world(size):
+    global world
+    world = [["" for _ in range(size)] for _ in range(size)]
+    max_cells = size * size
+    reserved = {tuple(agent_pos)}
+    while True:
+        try:
+            max_pits = max_cells - len(reserved) - 2
+            if max_pits < 0:
+                max_pits = 0
+            num_pits = int(input(f"Enter number of pits (0-{max_pits}): ").strip())
+            if 0 <= num_pits <= max_pits:
+                break
+            print("Number out of range. Try again.")
+        except ValueError:
+            print("Invalid number. Enter an integer.")
+    taken = set(reserved)
+    for i in range(num_pits):
+        while True:
+            try:
+                s = input(f"Enter pit {i+1} position as 'row col' (0-{size-1}): ").strip().split()
+                if len(s) != 2:
+                    raise ValueError
+                x, y = int(s[0]), int(s[1])
+                if not (0 <= x < size and 0 <= y < size):
+                    print("Position out of bounds. Try again.")
+                    continue
+                if (x, y) in taken:
+                    print("Cell already occupied. Choose another position.")
+                    continue
+                world[x][y] = "P"
+                taken.add((x, y))
+                break
+            except ValueError:
+                print("Invalid input. Enter two integers separated by space.")
+    while True:
+        try:
+            s = input(f"Enter Wumpus position as 'row col' (0-{size-1}): ").strip().split()
+            if len(s) != 2:
+                raise ValueError
+            x, y = int(s[0]), int(s[1])
+            if not (0 <= x < size and 0 <= y < size):
+                print("Position out of bounds. Try again.")
+                continue
+            if (x, y) in taken:
+                print("Cell already occupied. Choose another position.")
+                continue
+            world[x][y] = "W"
+            taken.add((x, y))
+            break
+        except ValueError:
+            print("Invalid input. Enter two integers separated by space.")
+    while True:
+        try:
+            s = input(f"Enter Gold position as 'row col' (0-{size-1}): ").strip().split()
+            if len(s) != 2:
+                raise ValueError
+            x, y = int(s[0]), int(s[1])
+            if not (0 <= x < size and 0 <= y < size):
+                print("Position out of bounds. Try again.")
+                continue
+            if (x, y) in taken:
+                print("Cell already occupied. Choose another position.")
+                continue
+            world[x][y] = "G"
+            taken.add((x, y))
+            break
+        except ValueError:
+            print("Invalid input. Enter two integers separated by space.")
+def init_display():
+    print("World (true layout):")
+    for i in range(SIZE):
+        for j in range(SIZE):
+            if [i, j] == agent_pos:
+                print("A", end=" ")
+            elif world[i][j] == "W":
+                print("W", end=" ")
+            elif world[i][j] == "P":
+                print("P", end=" ")
+            elif world[i][j] == "G":
+                print("G", end=" ")
+            else:
+                print(".", end=" ")
+        print()
+    print("A:Agent\nW:Wumpus\nP:Pit\nG:Gold\n")
+"""
+def :
+    print("\nCurrent Grid (agent view):")
+    for i in range(SIZE):
+        for j in range(SIZE):
+            if [i, j] == agent_pos:
+                print("A", end=" ")
+            else:
+                print(".", end=" ")
+        print()
+    print("\nAgent pos:", agent_pos)
+"""
+def display_kb():
+    """
+    Knowledge Base Map:
+    - A : agent current position
+    - V : safe and visited
+    - s : safe but not visited
+    - P : confirmed pit
+    - W : confirmed wumpus
+    - pW: possible pit and possible wumpus
+    - p?: possible pit
+    - w?: possible wumpus
+    - . : unknown
+    """
+    print("\nKnowledge Base Map:")
+    # Print column headers (optional, uncomment if desired)
+    # header = "   " + " ".join(f"{j:>3}" for j in range(SIZE))
+    # print(header)
+    for i in range(SIZE):
+        row_cells = []
+        for j in range(SIZE):
+            if [i, j] == agent_pos:
+                symbol = "A"
+            else:
+                cell = kb[i][j]
+                if cell.get('safe', False):
+                    if cell.get('visited', False):
+                        symbol = "V"
+                    else:
+                        symbol = "s"
+                elif cell['pit'] == 'confirmed':
+                    symbol = "P"
+                elif cell['wumpus'] == 'confirmed':
+                    symbol = "W"
+                elif cell['pit'] == 'possible' and cell['wumpus'] == 'possible':
+                    symbol = "pW"
+                elif cell['pit'] == 'possible':
+                    symbol = "p?"
+                elif cell['wumpus'] == 'possible':
+                    symbol = "w?"
+                else:
+                    symbol = "."
+            # ensure fixed width for alignment
+            row_cells.append(f"{symbol:>3}")
+        print("".join(row_cells))
+    # legend
+    print("\nLegend: A=Agent  V=visited safe  s=safe (not visited)  P=pit  W=wumpus  pW=possible both\n")
+def try_confirm():
+    for i in range(SIZE):
+        for j in range(SIZE):
+            cell = kb[i][j]
+            if cell['pit'] != 'confirmed' and cell['pit'] != 'no' and cell['pit_count'] >= 2:
+                cell['pit'] = 'confirmed'
+                if world[i][j] == "":
+                    world[i][j] = "P"
+            if cell['wumpus'] != 'confirmed' and cell['wumpus'] != 'no' and cell['wumpus_count'] >= 2:
+                cell['wumpus'] = 'confirmed'
+                if world[i][j] == "":
+                    world[i][j] = "W"
+            if cell['pit'] == 'no' and cell['wumpus'] == 'no' and not cell['safe']:
+                cell['safe'] = True
+def update_kb_from_percepts(x, y, breeze, strench):
+    key = (x, y)
+    if key not in processed_percepts:
+        processed_percepts[key] = {'breeze': False, 'stench': False}
+    # Process Breeze -> implicates adjacent pits
+    if breeze:
+        # only increment counts once for a given cell's breeze perception
+        if not processed_percepts[key]['breeze']:
+            for nx, ny in neighbors(x, y):
+                # don't implicate agent cell
+                if [nx, ny] == agent_pos:
+                    continue
+                if kb[nx][ny]['pit'] == 'no' or kb[nx][ny]['pit'] == 'confirmed':
+                    continue
+                kb[nx][ny]['pit'] = 'possible'
+                kb[nx][ny]['pit_count'] += 1
+            processed_percepts[key]['breeze'] = True
+    else:
+        # no breeze: all adjacent cells have no pit
+        for nx, ny in neighbors(x, y):
+            kb[nx][ny]['pit'] = 'no'
+            kb[nx][ny]['pit_count'] = 0
+    # Process Strench -> implicates adjacent Wumpus
+    if strench:
+        if not processed_percepts[key]['stench']:
+            for nx, ny in neighbors(x, y):
+                if [nx, ny] == agent_pos:
+                    continue
+                if kb[nx][ny]['wumpus'] == 'no' or kb[nx][ny]['wumpus'] == 'confirmed':
+                    continue
+                kb[nx][ny]['wumpus'] = 'possible'
+                kb[nx][ny]['wumpus_count'] += 1
+            processed_percepts[key]['stench'] = True
+    else:
+        # no strench: all adjacent cells have no wumpus
+        for nx, ny in neighbors(x, y):
+            kb[nx][ny]['wumpus'] = 'no'
+            kb[nx][ny]['wumpus_count'] = 0
+
+    # Mark current cell safe, because agent is alive on it
+    kb[x][y]['safe'] = True
+    kb[x][y]['pit'] = 'no'
+    kb[x][y]['wumpus'] = 'no'
+    kb[x][y]['pit_count'] = 0
+    kb[x][y]['wumpus_count'] = 0
+    # Mark visited since agent is on this cell
+    kb[x][y]['visited'] = True
+    # After updating counts, try to confirm any cells
+    try_confirm()
+def sensor():
+    """
+    Sense environment at agent_pos and update knowledge base accordingly.
+    """
+    global bump_flag, scream_flag
+    x, y = agent_pos
+    strench = False
+    if wumpus_alive:
+        for nx, ny in neighbors(x, y):
+            if world[nx][ny] == "W":
+                strench = True
+                break
+
+    breeze = False
+    for nx, ny in neighbors(x, y):
+        if world[nx][ny] == "P":
+            breeze = True
+            break
+    glitter = (world[x][y] == "G")
+    sensor_list = [
+        "Strench" if strench else "none",
+        "Breeze" if breeze else "none",
+        "Glitter" if glitter else "none",
+        "Bump" if bump_flag else "none",
+        "Scream" if scream_flag else "none"
+    ]
+    print("\nPercepts:", sensor_list)
+    # Update knowledge base from these percepts
+    update_kb_from_percepts(x, y, breeze, strench)
+    # show KB after update
+    display_kb()
+    bump_flag = False
+    scream_flag = False
+def move(dx, dy):
+    global agent_pos, bump_flag
+    x = agent_pos[0] + dx
+    y = agent_pos[1] + dy
+    if x < 0 or x >= SIZE or y < 0 or y >= SIZE:
+        bump_flag = True
+        print("Bump Wall")
+        sensor()
+        return
+    agent_pos = [x, y]
+    check()
+    sensor()
+def check():
+    global has_gold
+    x, y = agent_pos
+    if world[x][y] == "P":
+        print("Fell in Pit Game Over")
+        sys.exit()
+    if world[x][y] == "W" and wumpus_alive:
+        print("Wumpus killed you Game Over")
+        sys.exit()
+    if world[x][y] == "G":
+        print("Gold Found")
+def grab():
+    global has_gold
+    x, y = agent_pos
+    if world[x][y] == "G":
+        has_gold = True
+        world[x][y] = ""
+        print("Gold Grabbed. Game Cleared")
+        sys.exit()
+    else:
+        print("No Gold")
+    sensor()
+def shoot():
+    global wumpus_alive, scream_flag
+    print("Arrow fired")
+    killed = False
+    for nx, ny in neighbors(agent_pos[0], agent_pos[1]):
+        if world[nx][ny] == "W":
+            print("WUMPUS DEAD")
+            world[nx][ny] = ""
+            wumpus_alive = False
+            killed = True
+            break
+    if killed:
+        scream_flag = True
+        sensor()
+    else:
+        print("Missed")
+        sensor()
+def main():
+    global SIZE, agent_pos
+    print("WUMPUS WORLD (Knowledge-Based Agent)")
+    try:
+        SIZE = int(input("Enter grid size: ").strip())
+        if SIZE <= 0:
+            print("Size must be positive.")
+            return
+    except ValueError:
+        print("Invalid size")
+        return
+    # Set initial agent position to bottom-left cell: [SIZE-1, 0]
+    agent_pos = [SIZE-1,0]
+    # Initialize knowledge base with that agent start
+    init_kb(SIZE)
+    # Build world from user-specified positions
+    create_world(SIZE)
+    init_display()
+    sensor()
+    while True:
+        print("\nControls: [W->up, S->down, A->left, D->right, G->grab, E->exit]\n")
+        key = input("\nMove: ").upper()
+        if key == "W":
+            move(-1, 0)
+        elif key == "S":
+            move(1, 0)
+        elif key == "A":
+            move(0, -1)
+        elif key == "D":
+            move(0, 1)
+        elif key == "G":
+            grab()
+        elif key == "F":
+            shoot()
+        elif key == "E":
+            if has_gold:
+                print("\nYOU WON")
+            else:
+                print("\nEXITED")
+            break
+        else:
+            print("\nInvalid")
+if __name__ == "__main__":
+    main()
+[23bcs102@mepcolinux exe5]$python3 wampus.py
+WUMPUS WORLD (Knowledge-Based Agent)
+Enter grid size: 6
+Enter number of pits (0-33): 4
+Enter pit 1 position as 'row col' (0-5): 5 4
+Enter pit 2 position as 'row col' (0-5): 3 1
+Enter pit 3 position as 'row col' (0-5): 3 4
+Enter pit 4 position as 'row col' (0-5): 1 5
+Enter Wumpus position as 'row col' (0-5): 1 2
+Enter Gold position as 'row col' (0-5): 0 3
+World (true layout):
+. . . G . .
+. . W . . P
+. . . . . .
+. P . . P .
+. . . . . .
+A . . . P .
+A:Agent
+W:Wumpus
+P:Pit
+G:Gold
+
+
+Percepts: ['none', 'none', 'none', 'none', 'none']
+
+Knowledge Base Map:
+  .  .  .  .  .  .
+  .  .  .  .  .  .
+  .  .  .  .  .  .
+  .  .  .  .  .  .
+  s  .  .  .  .  .
+  A  s  .  .  .  .
+
+Legend: A=Agent  V=visited safe  s=safe (not visited)  P=pit  W=wumpus  pW=possible both
+
+
+Controls: [W->up, S->down, A->left, D->right, G->grab, E->exit]
+
+
+Move: w
+
+Percepts: ['none', 'none', 'none', 'none', 'none']
+
+Knowledge Base Map:
+  .  .  .  .  .  .
+  .  .  .  .  .  .
+  .  .  .  .  .  .
+  s  .  .  .  .  .
+  A  s  .  .  .  .
+  V  s  .  .  .  .
+
+Legend: A=Agent  V=visited safe  s=safe (not visited)  P=pit  W=wumpus  pW=possible both
+
+
+Controls: [W->up, S->down, A->left, D->right, G->grab, E->exit]
+
+
+Move: w
+
+Percepts: ['none', 'Breeze', 'none', 'none', 'none']
+
+Knowledge Base Map:
+  .  .  .  .  .  .
+  .  .  .  .  .  .
+ p?  .  .  .  .  .
+  A p?  .  .  .  .
+  V  s  .  .  .  .
+  V  s  .  .  .  .
+
+Legend: A=Agent  V=visited safe  s=safe (not visited)  P=pit  W=wumpus  pW=possible both
+
+
+Controls: [W->up, S->down, A->left, D->right, G->grab, E->exit]
+
+
+Move: w
+
+Percepts: ['none', 'none', 'none', 'none', 'none']
+
+Knowledge Base Map:
+  .  .  .  .  .  .
+  s  .  .  .  .  .
+  A  s  .  .  .  .
+  V p?  .  .  .  .
+  V  s  .  .  .  .
+  V  s  .  .  .  .
+
+Legend: A=Agent  V=visited safe  s=safe (not visited)  P=pit  W=wumpus  pW=possible both
+
+
+Controls: [W->up, S->down, A->left, D->right, G->grab, E->exit]
+
+
+Move: d
+
+Percepts: ['none', 'Breeze', 'none', 'none', 'none']
+
+Knowledge Base Map:
+  .  .  .  .  .  .
+  s p?  .  .  .  .
+  V  A p?  .  .  .
+  V  P  .  .  .  .
+  V  s  .  .  .  .
+  V  s  .  .  .  .
+
+Legend: A=Agent  V=visited safe  s=safe (not visited)  P=pit  W=wumpus  pW=possible both
+
+
+Controls: [W->up, S->down, A->left, D->right, G->grab, E->exit]
+
+
+Move: d
+
+Percepts: ['Strench', 'none', 'none', 'none', 'none']
+
+Knowledge Base Map:
+  .  .  .  .  .  .
+  s p? w?  .  .  .
+  V  V  A w?  .  .
+  V  P w?  .  .  .
+  V  s  .  .  .  .
+  V  s  .  .  .  .
+
+Legend: A=Agent  V=visited safe  s=safe (not visited)  P=pit  W=wumpus  pW=possible both
+
+
+Controls: [W->up, S->down, A->left, D->right, G->grab, E->exit]
+
+
+Move: d
+
+Percepts: ['none', 'none', 'none', 'none', 'none']
+
+Knowledge Base Map:
+  .  .  .  .  .  .
+  s p? w?  s  .  .
+  V  V  V  A  s  .
+  V  P w?  s  .  .
+  V  s  .  .  .  .
+  V  s  .  .  .  .
+
+Legend: A=Agent  V=visited safe  s=safe (not visited)  P=pit  W=wumpus  pW=possible both
+
+
+Controls: [W->up, S->down, A->left, D->right, G->grab, E->exit]
+
+
+Move: w
+
+Percepts: ['Strench', 'none', 'none', 'none', 'none']
+
+Knowledge Base Map:
+  .  .  . w?  .  .
+  s p?  W  A w?  .
+  V  V  V  V  s  .
+  V  P w?  s  .  .
+  V  s  .  .  .  .
+  V  s  .  .  .  .
+
+Legend: A=Agent  V=visited safe  s=safe (not visited)  P=pit  W=wumpus  pW=possible both
+
+
+Controls: [W->up, S->down, A->left, D->right, G->grab, E->exit]
+
+
+Move: w
+Gold Found
+
+Percepts: ['none', 'none', 'Glitter', 'none', 'none']
+
+Knowledge Base Map:
+  .  .  s  A  s  .
+  s p?  W  V w?  .
+  V  V  V  V  s  .
+  V  P w?  s  .  .
+  V  s  .  .  .  .
+  V  s  .  .  .  .
+
+Legend: A=Agent  V=visited safe  s=safe (not visited)  P=pit  W=wumpus  pW=possible both
+
+
+Controls: [W->up, S->down, A->left, D->right, G->grab, E->exit]
+
+
+Move: g
+Gold Grabbed. Game Cleared
+
+
+
+Exercsie - 6 
+
+
+[23bcs102@mepcolinux ex6]$cat ex6.prn
+Script started on Wed Apr  8 15:25:51 2026
+[23bcs102@mepcolinux ex6]$cat ari.pl
+% Menu-Driven Arithmetic Operations in Prolog
+
+% Arithmetic Operations
+add(X, Y, R) :- R is X + Y.
+subtract(X, Y, R) :- R is X - Y.
+multiply(X, Y, R) :- R is X * Y.
+divide(X, Y, R) :-
+    Y =\= 0,
+    R is X / Y.
+modulus(X, Y, R) :-
+    Y =\= 0,
+    R is X mod Y.
+power(X, Y, R) :- R is X ** Y.
+
+% Menu Display
+show_menu :-
+    nl, write('********** ARITHMETIC MENU **********'), nl,
+    write('1. Addition'), nl,
+    write('2. Subtraction'), nl,
+    write('3. Multiplication'), nl,
+    write('4. Division'), nl,
+    write('5. Modulus'), nl,
+    write('6. Power'), nl,
+    write('7. Exit'), nl,
+    write('Enter your choice (1-7): ').
+
+% Start Program
+start :-
+    repeat,
+    show_menu,
+    read(Choice),
+    ( Choice == 7 ->
+        write('Exiting program...'), nl, !
+    ; Choice >= 1, Choice =< 6 ->
+        write('Enter first number: '), read(X),
+        write('Enter second number: '), read(Y),
+        perform_operation(Choice, X, Y),
+        fail
+    ; write('Invalid choice! Please enter a number from 1 to 7.'), nl,
+      fail).
+
+% Perform Operation Based on Choice
+perform_operation(1, X, Y) :- add(X, Y, R), format('Result: ~w + ~w = ~w~n', [X, Y, R]).
+perform_operation(2, X, Y) :- subtract(X, Y, R), format('Result: ~w - ~w = ~w~n', [X, Y, R]).
+perform_operation(3, X, Y) :- multiply(X, Y, R), format('Result: ~w * ~w = ~w~n', [X, Y, R]).
+perform_operation(4, X, Y) :-
+    (Y =:= 0 -> write('Error: Division by zero not allowed!'), nl ;
+     divide(X, Y, R), format('Result: ~w / ~w = ~w~n', [X, Y, R])).
+perform_operation(5, X, Y) :-
+    (Y =:= 0 -> write('Error: Modulus by zero not allowed!'), nl ;
+     modulus(X, Y, R), format('Result: ~w mod ~w = ~w~n', [X, Y, R])).
+perform_operation(6, X, Y) :- power(X, Y, R), format('Result: ~w ^ ~w = ~w~n', [X, Y, R]).
+[23bcs102@mepcolinux ex6]$cat 1
+
+?-
+% c:/Users/Administrator/Desktop/arithe.pl compiled 0.00 sec, 14 clauses
+?- start.
+
+********** ARITHMETIC MENU **********
+1. Addition
+2. Subtraction
+3. Multiplication
+4. Division
+5. Modulus
+6. Power
+7. Exit
+Enter your choice (1-7): 1.
+Enter first number: |: 3.
+Enter second number: |: 4.
+Result: 3 + 4 = 7
+
+********** ARITHMETIC MENU **********
+1. Addition
+2. Subtraction
+3. Multiplication
+4. Division
+5. Modulus
+6. Power
+7. Exit
+Enter your choice (1-7): |: 2.
+Enter first number: |: 4.
+Enter second number: |: 5.
+Result: 4 - 5 = -1
+
+********** ARITHMETIC MENU **********
+1. Addition
+2. Subtraction
+3. Multiplication
+4. Division
+5. Modulus
+6. Power
+7. Exit
+Enter your choice (1-7): |: 3.
+Enter first number: |: 45.
+Enter second number: |: 34.
+Result: 45 * 34 = 1530
+
+********** ARITHMETIC MENU **********
+1. Addition
+2. Subtraction
+3. Multiplication
+4. Division
+5. Modulus
+6. Power
+7. Exit
+Enter your choice (1-7): |: 4.
+Enter first number: |: 3.
+Enter second number: |: 4.
+Result: 3 / 4 = 0.75
+
+********** ARITHMETIC MENU **********
+1. Addition
+2. Subtraction
+3. Multiplication
+4. Division
+5. Modulus
+6. Power
+7. Exit
+Enter your choice (1-7): |: 4.
+Enter first number: |: 1.
+Enter second number: |: 0.
+Error: Division by zero not allowed!
+
+********** ARITHMETIC MENU **********
+1. Addition
+2. Subtraction
+3. Multiplication
+4. Division
+5. Modulus
+6. Power
+7. Exit
+Enter your choice (1-7): |:
+[23bcs102@mepcolinux ex6]$ls
+1  2  3  4  ari.pl  domins.pl  ex6.prn  set.pl  test  tree.pl
+[23bcs102@mepcolinux ex6]$cat domins.pl
+% =====================================================
+% DOMINOS BILLING SYSTEM
+% =====================================================
+
+:- dynamic(total/1).
+:- dynamic(order/3).   % order(Item, Quantity, Amount)
+
+total(0).
+
+% ---------------- MENU PRICES ----------------
+price(margherita, 150).
+price(pepperoni, 250).
+price(farmhouse, 220).
+price(veggie_supreme, 200).
+price(chicken_dominator, 300).
+
+% ---------------- MENU ----------------
+menu :-
+    nl, write('********* DOMINOS MENU *********'), nl,
+    write('1. Margherita - Rs 150'), nl,
+    write('2. Pepperoni - Rs 250'), nl,
+    write('3. Farmhouse - Rs 220'), nl,
+    write('4. Veggie Supreme - Rs 200'), nl,
+    write('5. Chicken Dominator - Rs 300'), nl,
+    write('6. Show Total Bill & Exit'), nl,
+    write('Enter your choice (1-6): ').
+
+% ---------------- START ----------------
+start :-
+    retractall(total(_)),
+    assert(total(0)),
+    retractall(order(_,_,_)),
+    billing.
+
+% ---------------- BILLING LOOP ----------------
+billing :-
+    menu,
+    read(Choice),
+    process_choice(Choice).
+
+% ---------------- PROCESS CHOICE ----------------
+process_choice(6) :-
+    nl, write('==============================='), nl,
+    write('        DOMINOS BILL           '), nl,
+    write('==============================='), nl,
+    nl,
+    write('Item\tQty\tRate\tAmount'), nl,
+    write('--------------------------------'), nl,
+    show_items,
+    write('--------------------------------'), nl,
+    total(Total),
+    format('Total Bill Amount: Rs ~w~n', [Total]),
+    write('==============================='), nl,
+    write('Thank you! Visit again!'), nl,
+    nl.
+
+process_choice(Choice) :-
+    (Choice >= 1, Choice =< 5 ->
+        get_item(Choice, Item),
+        format('Enter quantity for ~w: ', [Item]),
+        read(Qty),
+        price(Item, Price),
+        Amount is Price * Qty,
+        retract(total(T)),
+        NewTotal is T + Amount,
+        assert(total(NewTotal)),
+        assert(order(Item, Qty, Amount)),
+        format('Added ~w x ~w for Rs ~w.~n', [Qty, Item, Amount]),
+        billing
+    ;
+        write('Invalid choice! Please enter 1 to 6.'), nl,
+        billing
+    ).
+
+% ---------------- ITEM MAPPING ----------------
+get_item(1, margherita).
+get_item(2, pepperoni).
+get_item(3, farmhouse).
+get_item(4, veggie_supreme).
+get_item(5, chicken_dominator).
+
+% ---------------- SHOW ITEMS ----------------
+show_items :-
+    order(Item, Qty, Amount),
+    price(Item, Price),
+    format('~w\t~w\t~w\t~w~n', [Item, Qty, Price, Amount]),
+    fail.
+show_items.
+[23bcs102@mepcolinux ex6]$cat 2
+Ā?- start.
+
+********* DOMINOS MENU *********
+1. Margherita - Rs 150
+2. Pepperoni - Rs 250
+3. Farmhouse - Rs 220
+4. Veggie Supreme - Rs 200
+5. Chicken Dominator - Rs 300
+6. Show Total Bill & Exit
+Enter your choice (1-6): 1.
+Enter quantity for margherita: |: 3.
+Added 3 x margherita for Rs 450.
+
+********* DOMINOS MENU *********
+1. Margherita - Rs 150
+2. Pepperoni - Rs 250
+3. Farmhouse - Rs 220
+4. Veggie Supreme - Rs 200
+5. Chicken Dominator - Rs 300
+6. Show Total Bill & Exit
+Enter your choice (1-6): |: 2.
+Enter quantity for pepperoni: |: 5.
+Added 5 x pepperoni for Rs 1250.
+
+********* DOMINOS MENU *********
+1. Margherita - Rs 150
+2. Pepperoni - Rs 250
+3. Farmhouse - Rs 220
+4. Veggie Supreme - Rs 200
+5. Chicken Dominator - Rs 300
+6. Show Total Bill & Exit
+Enter your choice (1-6): |: 3.
+Enter quantity for farmhouse: |: 5.
+Added 5 x farmhouse for Rs 1100.
+
+********* DOMINOS MENU *********
+1. Margherita - Rs 150
+2. Pepperoni - Rs 250
+3. Farmhouse - Rs 220
+4. Veggie Supreme - Rs 200
+5. Chicken Dominator - Rs 300
+6. Show Total Bill & Exit
+Enter your choice (1-6): |: 6.
+
+===============================
+        DOMINOS BILL
+===============================
+
+Item    Qty     Rate    Amount
+--------------------------------
+margherita      3       150     450
+pepperoni       5       250     1250
+farmhouse       5       220     1100
+--------------------------------
+Total Bill Amount: Rs 2800
+===============================
+Thank you! Visit again!
+
+[23bcs102@mepcolinux ex6]$cat set.pl
+% A collection of predicates for set operations on lists.
+
+% Membership: Checks if an element is a member of a set (list).
+% Usage: is_member(Element, Set)
+
+is_member(X, [X|_]).
+is_member(X, [_|Tail]) :-
+    is_member(X, Tail).
+% Subset: Checks if the first set is a subset of the second.
+% All elements of Set1 must be members of Set2.
+% Usage: is_subset(Set1, Set2)
+
+is_subset([], _).
+is_subset([Head|Tail], Set2) :-
+    is_member(Head, Set2),
+    is_subset(Tail, Set2).
+
+% Union: The third argument is the union of the first two sets.
+% The resulting set contains all unique elements from both sets.
+% Usage: union_of(Set1, Set2, Union)
+
+union_of([], Set, Set).
+union_of([Head|Tail], Set2, Union) :-
+    is_member(Head, Set2),
+    !,
+    union_of(Tail, Set2, Union).
+union_of([Head|Tail], Set2, [Head|Union]) :-
+    union_of(Tail, Set2, Union).
+
+% Intersection: The third argument is the intersection of the first two.
+% The resulting set contains elements that are in both sets.
+% Usage: intersection_of(Set1, Set2, Intersection)
+
+intersection_of([], _, []).
+intersection_of([Head|Tail], Set2, [Head|Intersection]) :-
+    is_member(Head, Set2),
+    !,
+    intersection_of(Tail, Set2, Intersection).
+intersection_of([_|Tail], Set2, Intersection) :-
+    intersection_of(Tail, Set2, Intersection).
+
+% Difference: The third argument is the difference of Set1 and Set2.
+% The resulting set contains elements of Set1 that are not in Set2.
+% Usage: difference_of(Set1, Set2, Difference)
+
+difference_of([], _, []).
+difference_of([Head|Tail], Set2, Difference) :-
+    is_member(Head, Set2),
+    !,
+    difference_of(Tail, Set2, Difference).
+difference_of([Head|Tail], Set2, [Head|Difference]) :-
+    difference_of(Tail, Set2, Difference).
+
+% Symmetric Difference: The third argument is the symmetric difference
+% of the first two sets (elements in one, but not both).
+% Usage: symmetric_difference_of(Set1, Set2, SymDifference)
+
+symmetric_difference_of(Set1, Set2, Result) :-
+    union_of(Set1, Set2, Union),
+    intersection_of(Set1, Set2, Intersection),
+    difference_of(Union, Intersection, Result).
+% Equality: Checks if two sets are equal.
+% Two sets are equal if they are subsets of each other.
+% Usage: equal_sets(Set1, Set2)
+
+equal_sets(Set1, Set2) :-
+    is_subset(Set1, Set2),
+    is_subset(Set2, Set1).
+[23bcs102@mepcolinux ex6]$cat 3
+% c:/Users/Administrator/Desktop/set.pl compiled 0.00 sec, 15 clauses
+?- start.
+ERROR: Unknown procedure: start/0 (DWIM could not correct goal)
+?- is_member(2, [1, 2, 3]).
+true .
+
+?- is_member(4, [1, 2, 3]).
+false.
+
+?- is_subset([], [1, 2, 3]).
+true.
+
+?- is_subset([1, 5], [1, 2, 3]).
+false.
+
+?- union_of([1, 2], [3, 4], [1, 2, 3, 4]).
+true.
+
+?- intersection_of([1, 2, 3], [2, 3, 4], [2, 3]).
+true.
+
+?- difference_of([1, 2, 3], [2, 3, 4], [1]).
+true.
+
+?- equal_sets([1, 2], [1, 2, 3]).
+false.
+
+?- equal_sets([1, 2, 3], [3, 2, 1]).
+true .
+
+?-
+|    symmetric_difference_of([1, 2, 3], [3, 4, 5], [1, 2, 4, 5]).
+true.
+
+?- .
+
+
+
+% =====================================================
+% TRAVANCORE ROYAL FAMILY TREE
+% =====================================================
+% ========================
+% FACTS: parent/gender
+% ========================
+% ---------- Generation 1 ----------
+
+
+parent(attingal_elaya_thampuran, sethu_lakshmi_bayi).
+parent(attingal_elaya_thampuran, sethu_parvathi_bayi).
+parent(attingal_elaya_thampuran, other_sister_1).
+
+gender(attingal_elaya_thampuran, female).
+gender(sethu_lakshmi_bayi, female).
+gender(sethu_parvathi_bayi, female).
+gender(other_sister_1, female).
+
+% ---------- Generation 2 ----------
+parent(sethu_parvathi_bayi, chithira_thirunal).
+parent(sethu_parvathi_bayi, uthradom_thirunal).
+parent(sethu_parvathi_bayi, karthika_thirunal).
+
+gender(chithira_thirunal, male).
+gender(uthradom_thirunal, male).
+gender(karthika_thirunal, female).
+
+% ---------- Generation 3 ----------
+parent(karthika_thirunal, pooyam_thirunal).
+parent(karthika_thirunal, aswathi_thirunal).
+
+parent(pooyam_thirunal, moolam_thirunal).
+parent(pooyam_thirunal, revathi_thirunal).
+
+gender(pooyam_thirunal, female).
+gender(aswathi_thirunal, female).
+gender(moolam_thirunal, male).
+gender(revathi_thirunal, male).
+
+% ---------- Generation 4 ----------
+parent(moolam_thirunal, prince_kerala_varma).
+parent(moolam_thirunal, princess_lakshmi_bayi).
+
+parent(aswathi_thirunal, shreekumar_varma).
+parent(aswathi_thirunal, princess_rukmini).
+
+gender(prince_kerala_varma, male).
+gender(princess_lakshmi_bayi, female).
+gender(shreekumar_varma, male).
+gender(princess_rukmini, female).
+
+% ---------- Generation 5 ----------
+parent(princess_lakshmi_bayi, princess_arya_varma).
+parent(princess_lakshmi_bayi, prince_aditya_varma).
+
+parent(princess_rukmini, princess_maya_lakshmi).
+parent(shreekumar_varma, princess_gowri_parvathi).
+
+gender(princess_arya_varma, female).
+gender(prince_aditya_varma, male).
+gender(princess_maya_lakshmi, female).
+gender(princess_gowri_parvathi, female).
+
+% ---------- Generation 6 ----------
+parent(princess_arya_varma, princess_lakshmi_devi).
+parent(princess_arya_varma, prince_rama_varma_iii).
+
+parent(princess_maya_lakshmi, princess_kamala_devi).
+parent(princess_maya_lakshmi, prince_balarama_thirunal_ii).
+
+parent(princess_gowri_parvathi, princess_rukmini_thirunal).
+parent(princess_gowri_parvathi, prince_vikrama_varma).
+
+gender(princess_lakshmi_devi, female).
+gender(prince_rama_varma_iii, male).
+gender(princess_kamala_devi, female).
+gender(prince_balarama_thirunal_ii, male).
+gender(princess_rukmini_thirunal, female).
+gender(prince_vikrama_varma, male).
+
+% ---------- Generation 7 ----------
+parent(princess_lakshmi_devi, princess_saraswati_lakshmi).
+parent(princess_lakshmi_devi, prince_jayanta_thirunal_iii).
+
+parent(princess_kamala_devi, princess_parvathi_devi).
+parent(princess_kamala_devi, prince_narayana_varma_iii).
+
+gender(princess_saraswati_lakshmi, female).
+gender(prince_jayanta_thirunal_iii, male).
+gender(princess_parvathi_devi, female).
+gender(prince_narayana_varma_iii, male).
+
+
+% =====================================================
+% RELATIONSHIPS
+% =====================================================
+
+% Mother
+mother(Mother, Child) :-
+    parent(Mother, Child),
+    gender(Mother, female).
+
+% Father
+father(Father, Child) :-
+    parent(Father, Child),
+    gender(Father, male).
+
+% Siblings
+sibling(X, Y) :-
+    parent(P, X),
+    parent(P, Y),
+    X \= Y.
+
+% Brother
+brother(Brother, Person) :-
+    sibling(Brother, Person),
+    gender(Brother, male).
+
+% Sister
+sister(Sister, Person) :-
+    sibling(Sister, Person),
+    gender(Sister, female).
+
+% Grandparent
+grandparent(GP, GC) :-
+    parent(GP, P),
+    parent(P, GC).
+
+% Grandmother
+grandmother(GM, GC) :-
+    grandparent(GM, GC),
+    gender(GM, female).
+
+% Grandfather
+grandfather(GF, GC) :-
+    grandparent(GF, GC),
+    gender(GF, male).
+
+% Aunt
+aunt(Aunt, Person) :-
+    parent(P, Person),
+    sister(Aunt, P).
+
+% Uncle
+uncle(Uncle, Person) :-
+    parent(P, Person),
+    brother(Uncle, P).
+
+% Nephew
+nephew(Nephew, Person) :-
+    sibling(Parent, Person),
+    parent(Parent, Nephew),
+    gender(Nephew, male).
+
+% Niece
+niece(Niece, Person) :-
+    sibling(Parent, Person),
+    parent(Parent, Niece),
+    gender(Niece, female).
+
+% Cousin
+cousin(X, Y) :-
+    parent(P1, X),
+    parent(P2, Y),
+    sibling(P1, P2),
+    X \= Y.
+
+% Ancestor
+ancestor(A, D) :- parent(A, D).
+ancestor(A, D) :-
+    parent(A, X),
+    ancestor(X, D).
+
+% Descendant
+descendant(D, A) :- ancestor(A, D).
+
+% Generation
+generation(attingal_elaya_thampuran, 0).
+
+generation(Person, N) :-
+    parent(P, Person),
+    generation(P, N1),
+    N is N1 + 1.
+[23bcs102@mepcolinux ex6]$cat 4
+฀Warning:    Earlier definition at c:/users/administrator/desktop/tree.pl:14
+Warning:    Current predicate: parent/2
+Warning:    Use :- discontiguous gender/2. to suppress this message
+% c:/Users/Administrator/Desktop/tree.pl compiled 0.00 sec, 75 clauses
+?- mother(attingal_elaya_thampuran, sethu_parvathi_bayi).
+true.
+
+?- father(moolam_thirunal, prince_kerala_varma).
+true.
+
+?- sibling(chithira_thirunal, uthradom_thirunal).
+true.
+
+?- sibling(sethu_lakshmi_bayi, sethu_parvathi_bayi).
+true.
+
+?- sister(karthika_thirunal, chithira_thirunal).
+true.
+
+?- grandmother(sethu_parvathi_bayi, pooyam_thirunal).
+true.
+
+?- grandfather(moolam_thirunal, princess_arya_varma).
+true.
+
+?- uncle(uthradom_thirunal, karthika_thirunal).
+false.
+
+?- cousin(moolam_thirunal, shreekumar_varma).
+true.
+
+?- ancestor(attingal_elaya_thampuran, princess_saraswati_lakshmi).
+true .
+
+?- descendant(prince_rama_varma_iii, sethu_parvathi_bayi).
+true .
+
+?- generation(attingal_elaya_thampuran, 0).
+true .
+
+?- generation(chithira_thirunal, 4).
+false.
+[23bcs102@mepcolinux ex6]$exit
+exit
+
+Script done on Wed Apr  8 15:26:36 2026
+[23bcs102@mepcolinux ex6]$
+
+
+
+Exercise - 7
+
+
+[23bcs102@mepcolinux ex7]$cat ex7.prn
+Script started on Wed Apr  8 15:20:17 2026
+[23bcs102@mepcolinux ex7]$cat test
+[23bcs102@mepcolinux ex7]$cat pr1.py
+print("Choose input mode:")
+print("1. Binary (0/1)")
+print("2. Bipolar (-1/1)")
+
+while True:
+    mode = input("Enter choice: ")
+    if mode in ['1', '2']:
+        break
+    print("Invalid input")
+
+# -------- STEP 2: NUMBER OF INPUTS --------
+n = int(input("Enter number of inputs: "))
+
+# -------- STEP 3: GENERATE PATTERNS (MANUAL) --------
+patterns = []
+
+def generate_patterns(current, index):
+    if index == n:
+        patterns.append(current[:])
+        return
+
+    if mode == "1":
+        values = [0, 1]
+    else:
+        values = [-1, 1]
+
+    for v in values:
+        current.append(v)
+        generate_patterns(current, index + 1)
+        current.pop()
+
+generate_patterns([], 0)
+
+# -------- STEP 4: LOGIC CHOICE --------
+print("\n1. AND")
+print("2. OR")
+print("3. AND-NOT (first 2 inputs only)")
+
+while True:
+    choice = input("Enter choice: ")
+    if choice in ['1', '2', '3']:
+        if choice == '3' and n < 2:
+            print("Need at least 2 inputs")
+        else:
+            break
+    print("Invalid")
+
+# -------- STEP 5: LOGIC FUNCTION --------
+def logic_function(x):
+    if choice == '1':
+        if mode == "1":
+            result = 1
+            for i in range(len(x)):
+                if x[i] == 0:
+                    result = 0
+            return result
+        else:
+            result = 1
+            for i in range(len(x)):
+                if x[i] == -1:
+                    result = -1
+            return result
+    elif choice == '2':
+        if mode == "1":
+            result = 0
+            for i in range(len(x)):
+                if x[i] == 1:
+                    result = 1
+            return result
+        else:
+            result = -1
+            for i in range(len(x)):
+                if x[i] == 1:
+                    result = 1
+            return result
+    elif choice == '3':
+        if mode == "1":
+            if x[0] == 1 and x[1] == 0:
+                return 1
+            else:
+                return 0
+        else:
+            return x[0] * (-x[1])
+
+# -------- STEP 6: TARGETS --------
+targets = []
+for i in range(len(patterns)):
+    targets.append(logic_function(patterns[i]))
+
+# -------- STEP 7: INITIALIZE --------
+W = []
+for i in range(n):
+    W.append(0)
+
+b = 0
+alpha = 1
+
+# -------- STEP 7.5: ASK THETA --------
+theta = float(input("Enter threshold (theta): "))
+
+# -------- STEP 8: ACTIVATION --------
+print("\n1. Binary Step")
+print("2. Bipolar Step")
+
+while True:
+    act = input("Enter choice: ")
+    if act in ['1', '2']:
+        break
+    print("Invalid")
+
+def activate(yin):
+    if act == '1':
+        if yin >= theta:
+            return 1
+        else:
+            return 0
+    else:
+        if yin >= theta:
+            return 1
+        else:
+            return -1
+
+# -------- STEP 9: TRAINING --------
+iteration = 1
+
+while True:
+    print("\n=== Iteration", iteration, "===")
+
+    # -------- BUILD HEADER --------
+    col_w = 8
+    header_cols = []
+    for j in range(n):
+        header_cols.append("x" + str(j + 1))
+    header_cols.append("t")
+    for j in range(n):
+        header_cols.append("w" + str(j + 1))
+    header_cols.append("b")
+    header_cols.append("yin")
+    header_cols.append("y")
+
+    header_str = ""
+    for col in header_cols:
+        header_str += "{:^{w}}".format(col, w=col_w)
+    print(header_str)
+    print("-" * (col_w * len(header_cols)))
+
+    error_found = False
+    rows_to_print = []
+
+    for i in range(len(patterns)):
+
+        x = patterns[i]
+        t = targets[i]
+
+        # -------- CALCULATE yin --------
+        yin = 0
+        for j in range(n):
+            yin = yin + W[j] * x[j]
+        yin = yin + b
+
+        # -------- ACTIVATION --------
+        y = activate(yin)
+
+        # -------- BUILD ROW --------
+        row_vals = []
+        for j in range(n):
+            row_vals.append(x[j])
+        row_vals.append(t)
+        for j in range(n):
+            row_vals.append(W[j])
+        row_vals.append(b)
+        row_vals.append(yin)
+        row_vals.append(y)
+
+        row_str = ""
+        for val in row_vals:
+            row_str += "{:^{w}}".format(val, w=col_w)
+        print(row_str)
+
+        # -------- UPDATE --------
+        if y != t:
+            error_found = True
+
+            if mode == "1":
+                if t == 1:
+                    t_val = 1
+                else:
+                    t_val = -1
+
+                x_val = []
+                for j in range(n):
+                    if x[j] == 0:
+                        x_val.append(-1)
+                    else:
+                        x_val.append(1)
+
+                for j in range(n):
+                    W[j] = W[j] + alpha * t_val * x_val[j]
+
+                b = b + alpha * t_val
+
+            else:
+                for j in range(n):
+                    W[j] = W[j] + alpha * t * x[j]
+
+                b = b + alpha * t
+
+    print("-" * (col_w * len(header_cols)))
+
+    if error_found == False:
+        print("\nTraining Complete!")
+        print("\nFinal Weights:")
+        final_str = ""
+        for j in range(n):
+            final_str += "  w" + str(j + 1) + " = " + str(W[j])
+        final_str += "  b = " + str(b)
+        print(final_str)
+        break
+
+    iteration = iteration + 1
+
+    if iteration > 50:
+        print("\nStopped (No convergence)")
+        break
+[23bcs102@mepcolinux ex7]$
+[23bcs102@mepcolinux ex7]$python3 pr1.py
+Choose input mode:
+1. Binary (0/1)
+2. Bipolar (-1/1)
+Enter choice: 2
+Enter number of inputs: 2
+
+1. AND
+2. OR
+3. AND-NOT (first 2 inputs only)
+Enter choice: 1
+Enter threshold (theta): 2
+
+1. Binary Step
+2. Bipolar Step
+Enter choice: 2
+
+=== Iteration 1 ===
+   x1      x2      t       w1      w2      b      yin      y
+----------------------------------------------------------------
+   -1      -1      -1      0       0       0       0       -1
+   -1      1       -1      0       0       0       0       -1
+   1       -1      -1      0       0       0       0       -1
+   1       1       1       0       0       0       0       -1
+----------------------------------------------------------------
+
+=== Iteration 2 ===
+   x1      x2      t       w1      w2      b      yin      y
+----------------------------------------------------------------
+   -1      -1      -1      1       1       1       -1      -1
+   -1      1       -1      1       1       1       1       -1
+   1       -1      -1      1       1       1       1       -1
+   1       1       1       1       1       1       3       1
+----------------------------------------------------------------
+
+Training Complete!
+
+Final Weights:
+  w1 = 1  w2 = 1  b = 1
+
+[23bcs102@mepcolinux ex7]$exit
+exit
+
+
+
+
+Exercise - 8 
+
