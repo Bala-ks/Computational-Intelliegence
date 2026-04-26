@@ -1,0 +1,10 @@
+(defun square-field ()
+  (format t "Enter the side length of the square field: ")
+  (let* ((side (read))
+         (area (* side side))
+         (perimeter (* 4 side)))
+    (format t "Side Length : ~a~%" side)
+    (format t "Area        : ~a~%" area)
+    (format t "Perimeter   : ~a~%" perimeter)))
+
+(square-field)
